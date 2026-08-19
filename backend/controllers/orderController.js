@@ -3,7 +3,7 @@
 // Place order using Cash on Delivery
 
 import UserModel from "../models/userModel.js";
-import orderModel from "../models/orderModel.js";
+import orderModel from "../models/ordermodel.js";
 import Stripe from 'stripe'
 // import Razorpay from "razorpay";
 
