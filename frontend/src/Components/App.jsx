@@ -79,7 +79,7 @@ import SearchBar from './SearchBar'
 import ShopContextProvider from '../Context/ShopContext'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import Verify from '../Pages/verify'
+import Verify from '../Pages/Verify'
 
 // import Addproduct from '../Pages/admin/Addproducts'
 
