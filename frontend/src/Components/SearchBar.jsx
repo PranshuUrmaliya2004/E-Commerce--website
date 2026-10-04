@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useRef, useState } from 'react'
 import { ShopContext } from '../Context/ShopContext'
 import { assets } from '../assets/assets'
 import { useLocation } from 'react-router-dom'
+import { findProductSuggestions } from '../Utils/productSearch'
 
 const SearchBar = () => {
   const { search, setSearch, showSearch, setShowSearch, products, navigate } = useContext(ShopContext)
@@ -18,7 +19,7 @@ const SearchBar = () => {
   const inputRef = useRef(null)
   const location = useLocation()
   const query = search.trim()
-  const suggestions = query ? products.filter((item) => item.name.toLowerCase().includes(query.toLowerCase())).slice(0, 6) : []
+  const suggestions = findProductSuggestions(products, query)
 
   useEffect(() => {
     if (!location.pathname.includes('collection')) setShowSearch(false)

@@ -1,44 +1,29 @@
 
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext } from 'react'
 import { ShopContext } from '../Context/ShopContext'
-import Title from './Title'
 import ProductItem from './ProductItem'
+import { Link } from 'react-router-dom'
 
 const LatestCollection = () => {
   const { products } = useContext(ShopContext)
-  const [latestProducts,setLatestProducts]= useState([]);
-  useEffect( ()=>{
-    setLatestProducts(products.slice(0,10));
-  },[products])
-
+  const latestProducts = products.slice(0, 8)
 
   return (
-    <div className='my-10'>
-      <div className='text-center py-8 text-3xl'>
-        <Title text1="LATEST" text2="COLLECTIONS" />
-
-        <p className='w-3/4 m-auto text-xs sm:text-sm md:text-base text-gray-600'>
-          Shop the latest arrivals with exclusive deals and fast delivery.
-        </p>
+    <section className='editorial-section'>
+      <div className='editorial-heading'>
+        <div>
+          <span className='editorial-kicker'>JUST LANDED</span>
+          <h2>The latest edit</h2>
+        </div>
+        <p>New-season pieces chosen for their shape, feel and staying power.</p>
       </div>
-      {/* Rendering Products */}
-      <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 gap-y-6'>
-        {
-          latestProducts.map((item) => (
-  <ProductItem
-    key={item._id}
-    id={item._id}
-    image={item.image}
-    name={item.name}
-    price={item.price}
-  />
-))
-
-}
-        
+      <div className='editorial-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'>
+        {latestProducts.map((item) => (
+          <ProductItem key={item._id} id={item._id} image={item.image} name={item.name} price={item.price} />
+        ))}
       </div>
-    </div>
-
+      <Link className='editorial-more' to='/collection'>View the full collection <span aria-hidden='true'>↗</span></Link>
+    </section>
   )
 }
 

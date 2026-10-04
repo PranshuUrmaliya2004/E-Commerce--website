@@ -1,28 +1,398 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap');
 
 @import "tailwindcss";
 
-a.active hr{
-    display: block;
+:root {
+  color-scheme: light;
+  --ink: #171615;
+  --muted: #706b68;
+  --paper: #fffdfc;
+  --surface: #f6f1ef;
+  --line: #e7dfdc;
+  --wine: #7d293b;
+  --font-body: "DM Sans", sans-serif;
+  --font-display: "Playfair Display", Georgia, serif;
 }
- *{
-    font-family: outfit;
- }
+
+* {
+  box-sizing: border-box;
+  font-family: var(--font-body);
+}
+
+html {
+  background: var(--paper);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a.active hr {
+  display: block;
+}
 
 .prata-regular {
-  font-family: "Prata", serif;
-  font-weight: 400;
-  font-style: normal;
-}
- 
-::-webkit-scrollbar{
-  display: none;
+  font-family: var(--font-display);
+  font-weight: 500;
 }
 
-@media (max-width:640px) {
+.season-hero {
+  position: relative;
+  isolation: isolate;
+  height: clamp(34rem, 57vw, 47rem);
+  overflow: hidden;
+  background: #efd4d2;
+}
+
+.season-hero--bleed {
+  width: calc(100% + 2rem);
+  margin-left: -1rem;
+}
+
+.season-hero__image {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 59% 43%;
+  animation: season-image-arrive 1.3s cubic-bezier(.2,.7,.2,1) both;
+}
+
+.season-hero__copy {
+  position: absolute;
+  top: 50%;
+  left: clamp(1.5rem, 8vw, 8rem);
+  width: min(39rem, 43%);
+  transform: translateY(-50%);
+  animation: season-copy-arrive .8s .15s cubic-bezier(.2,.7,.2,1) both;
+}
+
+.season-hero__eyebrow,
+.season-hero__edition {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+
+.season-hero__eyebrow {
+  margin: 0 0 1.2rem;
+  color: var(--wine);
+}
+
+.season-hero h1 {
+  max-width: 10ch;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(3.25rem, 5vw, 5.5rem);
+  font-weight: 500;
+  line-height: .99;
+}
+
+.season-hero h1 em {
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.season-hero__description {
+  max-width: 25rem;
+  margin: 1.4rem 0 1.7rem;
+  color: #48403f;
+  font-size: .95rem;
+  line-height: 1.7;
+}
+
+.season-hero__link {
+  display: inline-flex;
+  min-height: 3.25rem;
+  align-items: center;
+  gap: 2.5rem;
+  border-bottom: 1px solid var(--ink);
+  color: var(--ink);
+  font-size: .78rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: gap .25s ease, color .25s ease;
+}
+
+.season-hero__link:hover {
+  gap: 3.1rem;
+  color: var(--wine);
+}
+
+.season-hero__link span {
+  font-size: 1.1rem;
+}
+
+.season-hero__edition {
+  position: absolute;
+  right: clamp(1rem, 3vw, 3rem);
+  bottom: 1.5rem;
+  margin: 0;
+  color: #fff;
+  text-shadow: 0 1px 10px rgb(0 0 0 / 35%);
+}
+
+.season-hero__edition span {
+  padding: 0 .35rem;
+}
+
+.editorial-section {
+  margin-block: clamp(4rem, 8vw, 7rem);
+}
+
+.editorial-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.editorial-heading h2 {
+  margin: .45rem 0 0;
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.editorial-heading p {
+  max-width: 22rem;
+  margin: 0 0 .15rem;
+  color: var(--muted);
+  font-size: .86rem;
+  line-height: 1.6;
+}
+
+.editorial-kicker {
+  color: var(--wine);
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+
+.editorial-grid {
+  gap: 1.15rem;
+}
+
+.editorial-product {
+  animation: product-arrive .55s both;
+}
+
+.editorial-product__image {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.editorial-product__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .65s cubic-bezier(.2,.7,.2,1);
+}
+
+.editorial-product:hover .editorial-product__image img,
+.editorial-product:focus-visible .editorial-product__image img {
+  transform: scale(1.045);
+}
+
+.editorial-product__hint {
+  position: absolute;
+  right: .65rem;
+  bottom: .65rem;
+  left: .65rem;
+  padding: .7rem .5rem;
+  background: rgb(255 253 252 / 94%);
+  color: var(--ink);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(.4rem);
+  transition: opacity .2s ease, transform .2s ease;
+}
+
+.editorial-product:hover .editorial-product__hint,
+.editorial-product:focus-visible .editorial-product__hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.editorial-product__name {
+  display: block;
+  padding-top: .8rem;
+  color: #413c39;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.editorial-product__price {
+  display: block;
+  padding-top: .35rem;
+  color: var(--ink);
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.editorial-more {
+  display: flex;
+  width: fit-content;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 1.3rem;
+  margin: 2.5rem auto 0;
+  border-bottom: 1px solid var(--ink);
+  color: var(--ink);
+  font-size: .75rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@keyframes season-image-arrive {
+  from { opacity: .7; transform: scale(1.035); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes season-copy-arrive {
+  from { opacity: 0; translate: 0 1rem; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@keyframes product-arrive {
+  from { opacity: 0; translate: 0 .7rem; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@media (max-width: 640px) {
   a.active {
-    background-color: black;
+    background-color: var(--ink);
     color: white;
+  }
+
+  .season-hero {
+    height: min(78svh, 48rem);
+    min-height: 35rem;
+    background: #332226;
+  }
+
+  .season-hero__image {
+    object-position: 69% 44%;
+  }
+
+  .season-hero__copy {
+    top: auto;
+    right: 1.25rem;
+    bottom: 3rem;
+    left: 1.25rem;
+    width: auto;
+    transform: none;
+    color: #fff;
+  }
+
+  .season-hero__eyebrow,
+  .season-hero__description {
+    color: rgb(255 255 255 / 88%);
+  }
+
+  .season-hero__eyebrow {
+    margin-bottom: .8rem;
+  }
+
+  .season-hero h1 {
+    max-width: 9ch;
+    font-size: 3rem;
+    text-shadow: 0 2px 16px rgb(0 0 0 / 38%);
+  }
+
+  .season-hero__description {
+    max-width: 20rem;
+    margin: .8rem 0 1rem;
+    font-size: .82rem;
+    line-height: 1.5;
+    text-shadow: 0 1px 8px rgb(0 0 0 / 35%);
+  }
+
+  .season-hero__link {
+    min-height: 2.8rem;
+    border-color: #fff;
+    color: #fff;
+  }
+
+  .season-hero__edition {
+    right: 1.25rem;
+    bottom: 1rem;
+  }
+
+  .editorial-heading {
+    align-items: start;
+    flex-direction: column;
+    gap: .6rem;
+    margin-bottom: 1.3rem;
+  }
+
+  .editorial-heading h2 {
+    font-size: 2rem;
+  }
+
+  .editorial-grid {
+    gap: .85rem .65rem;
+  }
+
+  .editorial-product__hint {
+    display: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .season-hero--bleed {
+    width: calc(100% + 10vw);
+    margin-left: -5vw;
+  }
+}
+
+@media (min-width: 768px) {
+  .season-hero--bleed {
+    width: calc(100% + 14vw);
+    margin-left: -7vw;
+  }
+}
+
+@media (min-width: 1024px) {
+  .season-hero--bleed {
+    width: calc(100% + 18vw);
+    margin-left: -9vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
   }
 }
 
