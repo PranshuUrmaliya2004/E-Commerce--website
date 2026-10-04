@@ -76,16 +76,15 @@ import Navbar from './Navbar'
 import Footer from './Footer'
 import SearchBar from './SearchBar'
 
-import ShopContextProvider from '../Context/ShopContext'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Verify from '../Pages/Verify'
+import Profile from '../Pages/Profile'
 
 // import Addproduct from '../Pages/admin/Addproducts'
 
 const App = () => {
   return (
-    <ShopContextProvider>
       <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]">
         
         <ToastContainer />
@@ -95,7 +94,9 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home/>} />
           <Route path="/login" element={<Login />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/orders" element={<Order />} />
+          <Route path="/order" element={<Order />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/product/:productid" element={<Product />} />
           <Route path="/contact" element={<Contact />} />
@@ -115,7 +116,6 @@ const App = () => {
         <Footer />
 
       </div>
-    </ShopContextProvider>
   )
 }
 

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react"
+import { useContext, useState } from "react"
 
 import React  from 'react'
 import { ShopContext } from "../Context/ShopContext"
@@ -8,9 +8,8 @@ import ProductItem from "../Components/ProductItem"
 import RelateProduct from "../Components/RelateProduct"
 
 const Collection = () => {
-  const  {products,search,showSearch}=useContext(ShopContext)
+  const  {products,search}=useContext(ShopContext)
   const [showFilter,setShowfilter]= useState(false);
-  const [filteredProducts,setFilterProducts]= useState([]);
   const [category,setCategory]= useState([]);
   const [SubCategory,setSubCategory]= useState([]);
   const [sortType,setSortType]= useState('relevent');
@@ -32,54 +31,27 @@ const Collection = () => {
       setSubCategory([...SubCategory, value]);
     }
   };
-  const applyFilter = () => {
-    let ProductCopy = products.slice();
-    if(products && search.length ){
-      ProductCopy = ProductCopy.filter(item => item.name.toLowerCase().includes(search.toLowerCase()))
-    }
-    if (category.length > 0){
-      ProductCopy = ProductCopy.filter(item => category.includes(item.category))
-    }
-    if (SubCategory.length > 0){
-      ProductCopy = ProductCopy.filter(item => SubCategory.includes(item.subCategory))
-    }
-    setFilterProducts(ProductCopy);
-  }
-
-  const ShortProduct=()=>{
-    let fpCopy= filteredProducts.slice();
-  switch(sortType){
-    case 'low-high':
-      setFilterProducts(fpCopy.sort((a,b)=>(a.price - b.price)));
-      break;
-    case 'high-low':
-      setFilterProducts(fpCopy.sort((a,b)=>(b.price - a.price)));
-      break;
-      default:
-        applyFilter();
-        break;
-  }
-  
-  }
-
-  // useEffect(()=>{
-  //   setFilterProducts(products)
-  // },[products])
- useEffect(()=>{
-  applyFilter();
- }, [category,SubCategory,search,products]);
-
- useEffect(()=>{
-  ShortProduct();
- },[sortType])
+  const filteredProducts = products
+    .filter((item) => {
+      const matchesSearch = !search.trim() || item.name.toLowerCase().includes(search.trim().toLowerCase())
+      const matchesCategory = category.length === 0 || category.includes(item.category)
+      const matchesSubCategory = SubCategory.length === 0 || SubCategory.includes(item.subCategory)
+      return matchesSearch && matchesCategory && matchesSubCategory
+    })
+    .sort((first, second) => {
+      if (sortType === 'low-high') return first.price - second.price
+      if (sortType === 'high-low') return second.price - first.price
+      return 0
+    })
   return (
 <div className="flex flex-col sm:flex-row gap-1 sm:gap-10 pt-10 border-t">
 
   {/* filter  options */}
   <div className=" min-w-60">
-    <p onClick={()=>setShowfilter(!showFilter) } className="my-2 text-xl flex items-center  cursor-pointer gap-2">FILTERS
+    <button type="button" aria-expanded={showFilter} onClick={()=>setShowfilter(!showFilter) } className="my-2 flex items-center gap-2 text-xl sm:pointer-events-none">
+      FILTERS
       <img className={`h-3 sm:hidden ${showFilter ? 'rotate-90' : ''}`} src={assets.dropdown_icon} alt="" />
-    </p>
+    </button>
     {/* category filter */}
     <div className={`border border-gray-300 pl-5 py-3 mt-6 ${showFilter ? '' : 'hidden'} sm:block`}>
       <p className="mb-3 text-sm font-medium">CATEGORIES</p>

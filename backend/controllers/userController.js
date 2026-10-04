@@ -386,6 +386,33 @@ const adminLogin = async (req, res) => {
   }
 };
 
+const getUserProfile = async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.body.userId).select("name email");
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    return res.json({ success: true, user });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateUserProfile = async (req, res) => {
+  try {
+    const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
+    if (!name) return res.status(400).json({ success: false, message: "Name is required" });
+
+    const user = await UserModel.findByIdAndUpdate(
+      req.body.userId,
+      { name },
+      { new: true, runValidators: true }
+    ).select("name email");
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    return res.json({ success: true, user });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 /* ===============================
    EXPORT
 ================================*/
@@ -393,6 +420,8 @@ export {
   loginUser,
   registerUser,
   adminLogin,
+  getUserProfile,
+  updateUserProfile,
 };
 
 
