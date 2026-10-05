@@ -44,13 +44,11 @@ const authUser = async (req, res, next) => {
       });
     }
 
-    // "Bearer " remove karo
-    const token = authHeader.split(" ")[1];
-
-    if (!token) {
+    const [scheme, token] = authHeader.split(/\s+/);
+    if (scheme !== "Bearer" || !token) {
       return res.status(401).json({
         success: false,
-        message: "Token missing"
+        message: "Authorization token must use the Bearer scheme"
       });
     }
 
@@ -58,8 +56,12 @@ const authUser = async (req, res, next) => {
       token,
       process.env.JWT_SECRET
     );
-    
+    if (!decoded.id) {
+      return res.status(401).json({ success: false, message: "Invalid user token" });
+    }
 
+    req.userId = decoded.id;
+    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) req.body = {};
     req.body.userId = decoded.id;
 
     next();

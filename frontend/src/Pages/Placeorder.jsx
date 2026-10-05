@@ -1,318 +1,239 @@
-
-
-import React, { useContext, useState } from 'react'
-import axios from "axios";
-import { toast } from "react-toastify";
-
-import Title from '../Components/Title'
+import React, { useContext, useEffect, useState } from 'react'
+import axios from 'axios'
+import { Link } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import CartTotals from '../Components/CartTotals'
+import Title from '../Components/Title'
 import { assets } from '../assets/assets'
-
 import { ShopContext } from '../Context/ShopContext'
-// import { startSession } from 'mongoose';
+
+const emptyAddress = {
+  firstName: '', lastName: '', email: '', street: '', city: '', state: '', zipcode: '', country: '', phone: ''
+}
+
+const addressFields = [
+  { name: 'firstName', label: 'First name', type: 'text', autocomplete: 'given-name' },
+  { name: 'lastName', label: 'Last name', type: 'text', autocomplete: 'family-name' },
+  { name: 'email', label: 'Email address', type: 'email', autocomplete: 'email' },
+  { name: 'phone', label: 'Phone', type: 'tel', autocomplete: 'tel' },
+  { name: 'street', label: 'Street address', type: 'text', autocomplete: 'street-address', wide: true },
+  { name: 'city', label: 'City', type: 'text', autocomplete: 'address-level2' },
+  { name: 'state', label: 'State', type: 'text', autocomplete: 'address-level1' },
+  { name: 'zipcode', label: 'Postal code', type: 'text', autocomplete: 'postal-code' },
+  { name: 'country', label: 'Country', type: 'text', autocomplete: 'country-name' }
+]
 
 const Placeorder = () => {
-  const[method,setMethod]=useState("cod")
-    const {navigate,backendUrl,token,cartItems,setCartItems,getCartAmount,delivery_fee,products}= useContext(ShopContext);
- const [formdata,setFormdata]= useState({
-  firstName: '',
-  lastName:"",
-  email:"",
-  street:"",
-  city:"",
-  state:"",
-   zipcode:"",
-   country:"",
-   phone:""
+  const {
+    navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, delivery_fee, products
+  } = useContext(ShopContext)
+  const [method, setMethod] = useState('cod')
+  const [formData, setFormData] = useState(emptyAddress)
+  const [savedAddresses, setSavedAddresses] = useState([])
+  const [selectedAddressId, setSelectedAddressId] = useState('')
+  const [shouldSaveAddress, setShouldSaveAddress] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
- })
+  useEffect(() => {
+    if (!token) {
+      navigate('/login', { replace: true })
+      return
+    }
 
-   const onChangeHandler=(event)=>{
-      
-    const name= event.target.name;
-    const value= event.target.value;
+    let active = true
+    axios.get(`${backendUrl}/api/user/addresses`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then((response) => {
+      if (!active || !response.data.success) return
+      const addresses = response.data.addresses || []
+      setSavedAddresses(addresses)
+      const defaultAddress = addresses.find((address) => address.isDefault)
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress._id)
+        setFormData({ ...emptyAddress, ...defaultAddress })
+      }
+    }).catch((error) => {
+      if (active) toast.error(error.response?.data?.message || 'Could not load saved addresses')
+    })
 
-    setFormdata({...formdata,[name]:value})
+    return () => { active = false }
+  }, [backendUrl, navigate, token])
 
-   }
-const onSubmitHandler= async(event)=>{
-  event.preventDefault();
-  try{
+  const selectSavedAddress = (event) => {
+    const addressId = event.target.value
+    setSelectedAddressId(addressId)
+    const address = savedAddresses.find((item) => item._id === addressId)
+    setFormData(address ? { ...emptyAddress, ...address } : emptyAddress)
+    setShouldSaveAddress(false)
+  }
 
-    let orderItems= [];
-    for(const items in cartItems){
-      for(const item in cartItems[items]){
-        if(cartItems[items][item]>0){
-          const itemInfo=structuredClone(products.find(product=>product._id === items))
-          if(itemInfo) {
-            itemInfo.size= item;
-            itemInfo.quantity = cartItems[items][item];
-            orderItems.push(itemInfo);
+  const onChangeHandler = (event) => {
+    const { name, value } = event.target
+    setFormData((current) => ({ ...current, [name]: value }))
+  }
 
-          }
-         
+  const onSubmitHandler = async (event) => {
+    event.preventDefault()
+    if (!token) {
+      navigate('/login')
+      return
+    }
+    if (getCartAmount() <= 0) {
+      toast.error('Your cart is empty')
+      return
+    }
 
-
+    setSubmitting(true)
+    try {
+      const orderItems = []
+      for (const productId in cartItems) {
+        const product = products.find((item) => item._id === productId)
+        if (!product) continue
+        for (const size in cartItems[productId]) {
+          const quantity = Number(cartItems[productId][size])
+          if (quantity > 0) orderItems.push({ ...product, size, quantity })
         }
       }
+
+      if (orderItems.length === 0) {
+        toast.error('Your cart could not be loaded. Please refresh and try again.')
+        return
+      }
+
+      if (shouldSaveAddress && !selectedAddressId) {
+        try {
+          await axios.post(
+            `${backendUrl}/api/user/addresses`,
+            { address: formData, isDefault: savedAddresses.length === 0 },
+            { headers: { Authorization: 'Bearer ' + token } }
+          )
+          toast.success('Delivery address saved')
+        } catch (error) {
+          toast.error(error.response?.data?.message || 'Order can continue, but address was not saved')
+        }
+      }
+
+      const orderData = {
+        address: formData,
+        items: orderItems,
+        amount: getCartAmount() + delivery_fee,
+        paymentMethod: method
+      }
+      const endpoint = method === 'stripe' ? 'stripe' : 'place'
+      const response = await axios.post(`${backendUrl}/api/order/${endpoint}`, orderData, {
+        headers: { Authorization: 'Bearer ' + token }
+      })
+
+      if (!response.data.success) {
+        toast.error(response.data.message || 'Could not place your order')
+        return
+      }
+
+      if (method === 'stripe') {
+        if (!response.data.session_url) {
+          toast.error('Payment session could not be started')
+          return
+        }
+        window.location.assign(response.data.session_url)
+        return
+      }
+
+      setCartItems({})
+      toast.success('Order placed successfully')
+      navigate('/orders')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Checkout failed. Please try again.')
+    } finally {
+      setSubmitting(false)
     }
-     console.log(orderItems)
-
-    let orderData={
-        address:formdata,
-        items:orderItems,
-
-        amount:getCartAmount() + delivery_fee,
-          paymentMethod: method 
-    }
-   switch (method) {
-    //Api calls for cod
-case 'cod':
-const response= await axios.post(backendUrl + "/api/order/place",orderData,{
-          headers: {
-            Authorization: "Bearer " + token
-          }
-        
-        });
-if(response.data.success){
-  setCartItems({});
-  navigate('/orders')
-
-}else{
-  toast.error(response.data.message)
-}
-break;
-  
-case'stripe':
-
- const responseStripe= await axios.post( backendUrl + '/api/order/stripe',orderData,{ headers: {
-            Authorization: "Bearer " + token
-          }
-        
-        });
-
-
-
- if(responseStripe.data.success){
-  const {session_url}=responseStripe.data
-  window.location.replace(session_url)
-
- }else{
-  toast.error(responseStripe.data.message)
- }
- 
-// break;
-//  case'razorpay':
-//  const responseRazorpay= await axios.post(backendUrl + '/api/order/razorpay',orderData,{ headers: {
-//             Authorization: "Bearer " + token
-//           }
-        
-//         });
-//         if(responseRazorpay.data.success){
-//           console.log(responseRazorpay.data.order)
-
-//         }
-
-
-
-case 'razorpay':
-  const responseRazorpay = await axios.post(
-    backendUrl + '/api/order/razorpay',
-    orderData,
-    { headers: { Authorization: "Bearer " + token } }
-  );
-
-  if(responseRazorpay.data.success){
-    // Directly mark payment as success (fake)
-    await axios.post(
-      backendUrl + '/api/order/verify-fake',
-      { orderId: responseRazorpay.data.orderId, userId: token.userId },
-      { headers: { Authorization: "Bearer " + token } }
-    );
-
-    toast.success("Payment Successful (Fake Razorpay)");
-    setCartItems({});
-    navigate("/orders");
   }
-  break;
 
+  if (!token) return null
 
-
-
-  case 'paytm':
-  const responsePaytm = await axios.post(
-    backendUrl + '/api/order/paytm',
-    orderData,
-    { headers: { Authorization: "Bearer " + token } }
-  );
-
-  if(responsePaytm.data.success){
-    toast.success("Payment Successful (Fake Paytm)");
-    setCartItems({});
-    navigate("/orders");
-  } else {
-    toast.error(responsePaytm.data.message);
+  if (getCartAmount() <= 0) {
+    return (
+      <main className='min-h-[55vh] border-t pt-12 text-center'>
+        <h1 className='prata-regular text-3xl'>Your cart is empty</h1>
+        <p className='mt-3 text-sm text-gray-500'>Add a piece to your bag before checking out.</p>
+        <Link to='/collection' className='mt-6 inline-flex min-h-12 items-center bg-black px-6 text-sm text-white'>Browse collection</Link>
+      </main>
+    )
   }
-break;
-//phonepe fake payment
-case 'phonepe':
-  const responsePhonePe = await axios.post(
-    backendUrl + '/api/order/phonepe',
-    orderData,
-    { headers: { Authorization: "Bearer " + token } }
-  );
 
-  if(responsePhonePe.data.success){
-    toast.success("Payment Successful (Fake PhonePe)");
-    setCartItems({});
-    navigate("/orders");
-  } else {
-    toast.error(responsePhonePe.data.message);
-  }
-break;
-
-
-
-
-default:
-break;
-
-
-
-
-
-   }
-
-
-  }
-catch(error){
- console.error(error);
- 
-}
-}
-
- 
   return (
-    <form onSubmit={onSubmitHandler}  className="flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-t">
-
-      {/* -------- LEFT SIDE -------- */}
-      <div className="flex flex-col gap-4 w-full sm:max-w-[480px]">
-        <div className="text-xl sm:text-2xl my-3">
-          <Title text1="DELIVERY" text2="INFORMATION" />
+    <form onSubmit={onSubmitHandler} className='checkout-grid grid gap-10 border-t pt-8 sm:pt-12 lg:grid-cols-[1.1fr_.9fr]'>
+      <section className='checkout-panel space-y-5'>
+        <div>
+          <p className='editorial-kicker'>STEP 1 OF 2</p>
+          <Title text1='DELIVERY' text2='ADDRESS' />
         </div>
 
-        <div className="flex gap-3">
-          <input  required onChange={onChangeHandler}
-            name='firstName' value={formdata.firstName}
-            className="border rounded py-2 px-3 w-full"
-            placeholder="First name"
-          />
-          <input required onChange={onChangeHandler}
-           name='lastName' value={formdata.lastName}
-            className="border rounded py-2 px-3 w-full"
-            placeholder="Last name"
-          />
+        {savedAddresses.length > 0 && (
+          <label className='block text-sm font-medium text-gray-700'>
+            Use a saved address
+            <select value={selectedAddressId} onChange={selectSavedAddress} className='mt-2 w-full border border-gray-300 bg-white px-3 py-3 text-sm'>
+              <option value=''>Enter a new address</option>
+              {savedAddresses.map((address) => (
+                <option key={address._id} value={address._id}>
+                  {address.label || 'Address'} · {address.firstName} {address.lastName} · {address.city}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        <div className='grid gap-3 sm:grid-cols-2'>
+          {addressFields.map(({ name, label, type, autocomplete, wide }) => (
+            <label key={name} className={`block text-sm font-medium text-gray-700 ${wide ? 'sm:col-span-2' : ''}`}>
+              {label}
+              <input
+                type={type}
+                autoComplete={autocomplete}
+                required
+                name={name}
+                value={formData[name] || ''}
+                onChange={onChangeHandler}
+                className='mt-2 w-full border border-gray-300 bg-white px-3 py-3 text-base outline-none focus:border-black'
+              />
+            </label>
+          ))}
         </div>
 
-        <input required onChange={onChangeHandler}
-           name='email' value={formdata.email}
-          className="border rounded py-2 px-3 w-full"
-          placeholder="Email address"
-        />
+        {!selectedAddressId && (
+          <label className='flex items-center gap-2 text-sm text-gray-600'>
+            <input type='checkbox' checked={shouldSaveAddress} onChange={(event) => setShouldSaveAddress(event.target.checked)} />
+            Save this delivery address to my account
+          </label>
+        )}
+      </section>
 
-        <input required onChange={onChangeHandler}
-         name='street' value={formdata.street}
-          className="border rounded py-2 px-3 w-full"
-          placeholder="Street"
-        />
+      <aside className='checkout-panel space-y-7 lg:pt-8'>
+        <section className='border border-gray-200 p-5 sm:p-6'>
+          <p className='mb-4 text-xs font-semibold uppercase tracking-[.16em] text-gray-500'>Order summary</p>
+          <CartTotals />
+        </section>
 
-        <div className="flex gap-3">
-          <input required onChange={onChangeHandler}
-             name='city' value={formdata.city}
-            className="border rounded py-2 px-3 w-full"
-            placeholder="City"
-          />
-          <input required onChange={onChangeHandler}
-           name='state' value={formdata.state}
-            className="border rounded py-2 px-3 w-full"
-            placeholder="State"
-          />
-        </div>
-
-        <div className="flex gap-3">
-          <input required onChange={onChangeHandler}
-            name='zipcode' value={formdata.zipcode}
-            className="border rounded py-2 px-3 w-full"
-            placeholder="Zipcode"
-          />
-          <input required   onChange={onChangeHandler}
-        name='country' value={formdata.country}
-            className="border rounded py-2 px-3 w-full"
-            placeholder="Country"
-          />
-        </div>
-
-        <input required onChange={onChangeHandler}
-           name='phone' value={formdata.phone}
-          className="border rounded py-2 px-3 w-full"
-          placeholder="Phone"
-        />
-      </div>
-
-      {/* -------- RIGHT SIDE -------- */}
-      <div className="mt-8 w-full sm:max-w-[420px]">
-
-        <CartTotals />
-
-        <div className="mt-12">
-          <Title text1="PAYMENT" text2="METHOD" />
-        </div>
-
-        {/* -------- PAYMENT OPTIONS -------- */}
-        <div className="flex gap-3 flex-col lg:flex-row">
-
-          <div onClick={()=>setMethod('stripe')} className="flex items-center gap-3 border  h-10  px-1  cursor-pointer rounded">
-            {/* <p className={`w-4 h-4 border rounded-full` }></p> */}
-             <span className={`w-4 h-4 border rounded-full ${method ==='stripe'? 'bg-green-400':''}`}></span>
-            <img className="h-5 mx-4" src={assets.stripe_logo} alt="Stripe" />
+        <section>
+          <p className='mb-4 text-xs font-semibold uppercase tracking-[.16em] text-gray-500'>Payment method</p>
+          <div className='grid gap-3 sm:grid-cols-2'>
+            <label className={`flex min-h-14 cursor-pointer items-center gap-3 border px-4 transition ${method === 'cod' ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
+              <input type='radio' name='paymentMethod' value='cod' checked={method === 'cod'} onChange={() => setMethod('cod')} />
+              <span className='text-sm font-medium'>Cash on delivery</span>
+            </label>
+            <label className={`flex min-h-14 cursor-pointer items-center gap-3 border px-4 transition ${method === 'stripe' ? 'border-black bg-gray-50' : 'border-gray-200'}`}>
+              <input type='radio' name='paymentMethod' value='stripe' checked={method === 'stripe'} onChange={() => setMethod('stripe')} />
+              <img className='h-5 max-w-20 object-contain' src={assets.stripe_logo} alt='Stripe' />
+              <span className='text-sm font-medium'>Card</span>
+            </label>
           </div>
-          <div onClick={()=>setMethod('razorpay')} className="flex items-center gap-3 border h-10  px-1  cursor-pointer rounded">
-            {/* <p className={`w-4 h-4 border rounded-full` }></p> */}
-             <span className={`w-4 h-4 border rounded-full ${method ==='razorpay'? 'bg-green-400':''}`}></span>
-            <img className="h-5 mx-4" src={assets.razorpay_logo} alt="razorpay" />
-          </div>
-          <div onClick={()=>setMethod('paytm')} className="flex items-center gap-3 border h-10  px-1   cursor-pointer rounded">
-            {/* <p className={`w-4 h-4 border rounded-full` }></p> */}
-             <span className={`w-4 h-4 border rounded-full ${method ==='paytm'? 'bg-green-400':''}`}></span>
-            <img className="h-8 mx-4" src={assets.paytm_logo} alt="paytm" />
-          </div>
-             </div>
-             <br />
-             <div  className="flex gap-3 flex-col lg:flex-row">
-              <div onClick={()=>setMethod('phonepe')} className="flex items-center gap-3 border h-10  px-1   cursor-pointer rounded">
-            {/* <p className={`w-4 h-4 border rounded-full` }></p> */}
-             <span className={`w-4 h-4 border rounded-full ${method ==='phonepe'? 'bg-green-400':''}`}></span>
-            <img className="h-10 mx-6" src={assets.phonepe_logo} alt="phonepe" />
-          </div>
-             
-          <div onClick={()=>setMethod('cod')} className="flex items-center gap-3 border h-10 px-1 cursor-pointer rounded">
-            <span className={`w-4 h-4 border rounded-full ${method ==='cod'? 'bg-green-400':''}`}></span>
-            <p className="text-gray-500 text-sm font-medium mx-4">
-              CASH ON DELIVERY
-            </p>
-          </div>
-          </div>
-          <div className='w-full text-end mt-8'>
-            <button type='submit' className='bg-black text-white px-16 py-3 text-sm'>Place Order</button>
+        </section>
 
-          </div>
-
-        </div>
-      
-      </form>
-   
+        <button type='submit' disabled={submitting} className='flex min-h-13 w-full items-center justify-center bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-wait disabled:opacity-60'>
+          {submitting ? 'Processing...' : method === 'stripe' ? 'Continue to secure payment' : 'Place order'}
+        </button>
+      </aside>
+    </form>
   )
-  }
-
+}
 
 export default Placeorder

@@ -1,6 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { toast } from 'react-toastify'
 import { assets } from '../assets/assets'
 import { ShopContext } from '../Context/ShopContext'
 
@@ -28,7 +27,7 @@ const CloseIcon = (props) => <Icon {...props}><path d='m6 6 12 12M18 6 6 18' /><
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-  const { search, setSearch, setShowSearch, getCartCount, navigate, token, setToken, setCartItems } = useContext(ShopContext)
+  const { search, setSearch, setShowSearch, getCartCount, getWishlistCount, navigate, token, setToken, setCartItems } = useContext(ShopContext)
   const location = useLocation()
   const activeCategory = new URLSearchParams(location.search).get('category')
   const activeSort = new URLSearchParams(location.search).get('sort')
@@ -137,10 +136,10 @@ const Navbar = () => {
               {renderAccountMenu()}
             </div>
 
-            <button type='button' aria-label='Wishlist' title='Wishlist' onClick={() => toast.info('Wishlist is coming soon.')} className='shop-nav__action shop-nav__wishlist'>
-              <HeartIcon size={21} />
+            <Link to='/wishlist' onClick={closeMenus} aria-label={`Wishlist, ${getWishlistCount()} saved items`} className='shop-nav__action shop-nav__wishlist'>
+              <span className='shop-nav__heart-icon'><HeartIcon size={21} />{getWishlistCount() > 0 && <span className='shop-nav__count'>{getWishlistCount()}</span>}</span>
               <span>Wishlist</span>
-            </button>
+            </Link>
 
             <Link to='/cart' onClick={closeMenus} aria-label={`Shopping bag, ${getCartCount()} items`} className='shop-nav__action shop-nav__bag'>
               <span className='shop-nav__bag-icon'><BagIcon size={21} /><span className='shop-nav__count'>{getCartCount()}</span></span>

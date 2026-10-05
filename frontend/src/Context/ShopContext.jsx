@@ -334,6 +334,14 @@ const ShopContextProvider = ({ children }) => {
 
   const [products, setProducts] = useState([])
   const [cartItems, setCartItems] = useState({})
+  const [wishlistItems, setWishlistItems] = useState(() => {
+    try {
+      const savedWishlist = JSON.parse(localStorage.getItem('shopnex-wishlist') || '[]')
+      return Array.isArray(savedWishlist) ? savedWishlist.filter((id) => typeof id === 'string') : []
+    } catch {
+      return []
+    }
+  })
 
   const [token, setToken] = useState(
     localStorage.getItem("token") || ""
@@ -499,12 +507,123 @@ const ShopContextProvider = ({ children }) => {
     return total
   }
 
+  const toggleWishlist = (productId) => {
+    const alreadySaved = wishlistItems.includes(productId)
+    const nextItems = alreadySaved
+      ? wishlistItems.filter((id) => id !== productId)
+      : [...wishlistItems, productId]
+    setWishlist(nextItems)
+    toast.success(alreadySaved ? 'Removed from wishlist' : 'Added to wishlist')
+  }
+
+  const removeFromWishlist = (productId) => {
+    setWishlist(wishlistItems.filter((id) => id !== productId))
+  }
+
+  const isInWishlist = (productId) => wishlistItems.includes(productId)
+  const getWishlistCount = () => wishlistItems.length
+
+  const saveWishlistToAccount = async (productIds) => {
+    if (!token) return
+
+    try {
+      const response = await axios.put(
+        backendUrl + '/api/user/wishlist',
+        { productIds },
+        { headers: { Authorization: 'Bearer ' + token } }
+      )
+
+      if (response.data.success) setWishlistItems(response.data.wishlist || productIds)
+      else toast.error(response.data.message || 'Could not save wishlist')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not sync wishlist to your account')
+    }
+  }
+
+  const setWishlist = (nextItems) => {
+    const uniqueItems = [...new Set(nextItems)]
+    setWishlistItems(uniqueItems)
+    saveWishlistToAccount(uniqueItems)
+  }
+
   // ================= LOAD DATA =================
   useEffect(() => {
 
     getProductsData()
 
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem('shopnex-wishlist', JSON.stringify(wishlistItems))
+  }, [wishlistItems])
+
+  useEffect(() => {
+    const syncWishlist = (event) => {
+      if (event.key !== 'shopnex-wishlist') return
+
+      let nextItems = []
+      try {
+        const storedItems = JSON.parse(event.newValue || '[]')
+        if (Array.isArray(storedItems)) nextItems = storedItems.filter((id) => typeof id === 'string')
+      } catch {
+        nextItems = []
+      }
+
+      setWishlistItems((currentItems) => (
+        currentItems.length === nextItems.length && currentItems.every((id, index) => id === nextItems[index])
+          ? currentItems
+          : nextItems
+      ))
+    }
+
+    window.addEventListener('storage', syncWishlist)
+    return () => window.removeEventListener('storage', syncWishlist)
+  }, [])
+
+  useEffect(() => {
+    if (!token) return
+
+    let active = true
+    const loadAccountWishlist = async () => {
+      try {
+        const response = await axios.get(backendUrl + '/api/user/wishlist', {
+          headers: { Authorization: 'Bearer ' + token }
+        })
+
+        if (!response.data.success) {
+          toast.error(response.data.message || 'Could not load account wishlist')
+          return
+        }
+
+        const guestItems = (() => {
+          try {
+            const storedItems = JSON.parse(localStorage.getItem('shopnex-wishlist') || '[]')
+            return Array.isArray(storedItems) ? storedItems.filter((id) => typeof id === 'string') : []
+          } catch {
+            return []
+          }
+        })()
+        const accountItems = response.data.wishlist || []
+        const mergedItems = [...new Set([...accountItems, ...guestItems])]
+        const synced = mergedItems.length === accountItems.length
+          ? accountItems
+          : (await axios.put(
+            backendUrl + '/api/user/wishlist',
+            { productIds: mergedItems },
+            { headers: { Authorization: 'Bearer ' + token } }
+          )).data.wishlist
+
+        if (active && Array.isArray(synced)) setWishlistItems(synced)
+      } catch (error) {
+        if (active) toast.error(error.response?.data?.message || 'Could not load account wishlist')
+      }
+    }
+
+    loadAccountWishlist()
+    return () => {
+      active = false
+    }
+  }, [backendUrl, token])
 
   useEffect(() => {
 
@@ -529,6 +648,12 @@ const ShopContextProvider = ({ children }) => {
 
     cartItems,
     setCartItems,
+    wishlistItems,
+    toggleWishlist,
+    setWishlist,
+    removeFromWishlist,
+    isInWishlist,
+    getWishlistCount,
 
     addToCart,
     updateQuantity,

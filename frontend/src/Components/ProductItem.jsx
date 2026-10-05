@@ -31,17 +31,32 @@ import { ShopContext } from '../Context/ShopContext'
 import { Link } from 'react-router-dom'
 
 const ProductItem = ({ id, name, image, price }) => {
-  const { currency } = useContext(ShopContext)
+  const { currency, toggleWishlist, isInWishlist } = useContext(ShopContext)
+  const saved = isInWishlist(id)
 
   return (
-    <Link className='editorial-product group block min-w-0 text-gray-700' to={`/product/${id}`}>
-      <div className='editorial-product__image'>
-        <img src={image?.[0]} alt={name} loading='lazy' />
-        <span className='editorial-product__hint'>VIEW THE PIECE</span>
-      </div>
-      <span className='editorial-product__name'>{name}</span>
-      <span className='editorial-product__price'>{currency}{price}</span>
-    </Link>
+    <article className='editorial-product group relative block min-w-0 text-gray-700'>
+      <Link className='block text-inherit no-underline' to={`/product/${id}`}>
+        <div className='editorial-product__image'>
+          <img src={image?.[0]} alt={name} loading='lazy' />
+          <span className='editorial-product__hint'>VIEW THE PIECE</span>
+        </div>
+        <span className='editorial-product__name'>{name}</span>
+        <span className='editorial-product__price'>{currency}{price}</span>
+      </Link>
+      <button
+        type='button'
+        aria-label={saved ? `Remove ${name} from wishlist` : `Add ${name} to wishlist`}
+        aria-pressed={saved}
+        title={saved ? 'Remove from wishlist' : 'Add to wishlist'}
+        onClick={() => toggleWishlist(id)}
+        className={`wishlist-heart${saved ? ' is-saved' : ''}`}
+      >
+        <svg aria-hidden='true' viewBox='0 0 24 24' fill={saved ? 'currentColor' : 'none'} stroke='currentColor' strokeWidth='1.7' strokeLinecap='round' strokeLinejoin='round'>
+          <path d='M20.8 8.7c0 5.2-8.8 10.2-8.8 10.2S3.2 13.9 3.2 8.7a4.5 4.5 0 0 1 8.8-1.2 4.5 4.5 0 0 1 8.8 1.2Z' />
+        </svg>
+      </button>
+    </article>
   )
 }
 

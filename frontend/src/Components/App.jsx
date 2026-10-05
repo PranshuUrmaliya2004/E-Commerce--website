@@ -60,7 +60,7 @@
 
 
 import React from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 
 import Home from '../Pages/Home'
 import Login from '../Pages/Login'
@@ -80,10 +80,13 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Verify from '../Pages/Verify'
 import Profile from '../Pages/Profile'
+import Wishlist from '../Pages/Wishlist'
 
 // import Addproduct from '../Pages/admin/Addproducts'
 
 const App = () => {
+  const location = useLocation()
+
   return (
       <div className="px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]">
         
@@ -91,10 +94,12 @@ const App = () => {
         <Navbar />
         <SearchBar />
 
+        <div key={location.pathname} className='route-enter'>
         <Routes>
           <Route path="/" element={<Home/>} />
           <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/orders" element={<Order />} />
           <Route path="/order" element={<Order />} />
           <Route path="/cart" element={<Cart />} />
@@ -112,6 +117,7 @@ const App = () => {
           {/* ADMIN */}
           {/* <Route path="/add-product" element={<Addproduct />} /> */}
         </Routes>
+        </div>
 
         <Footer />
 

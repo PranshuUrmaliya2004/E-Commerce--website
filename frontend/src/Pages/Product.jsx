@@ -1,42 +1,25 @@
-import React, { useContext, useEffect } from 'react'
+import React, { useContext, useState } from 'react'
 import { useParams } from 'react-router-dom';
 import { ShopContext } from '../Context/ShopContext';
-import { useState } from 'react';
 import { assets } from '../assets/assets';
 import RelateProduct from '../Components/RelateProduct';
 
 const Product = ()=>{
  const { productid } = useParams();
 
-  const {products,currency,addToCart}= useContext(ShopContext);
-  const [productData,setProductData]= useState(false);
-  const [image,setImage]= useState('');
-  const [size,setSize]= useState(null);
-
-  const fetchProductData= async () =>{
-     products.map((item)=>{
-      if(item._id === productid){
-        setProductData(item);
-        setImage(item.image[0]);
-        setSize(item.sizes[0]); 
-        
-         return null;
-      }
-      });
-     
-  }
-        
-       
-     
-
-
-useEffect(()=>{
-    fetchProductData();
-
-},[productid,products])
+  const {products,currency,addToCart,toggleWishlist,isInWishlist}= useContext(ShopContext);
+  const [selectedImage, setSelectedImage] = useState(null)
+  const [selectedSize, setSelectedSize] = useState(null)
+  const productData = products.find((item) => item._id === productid)
+  const image = selectedImage?.productId === productid
+    ? selectedImage.source
+    : productData?.image?.[0] || ''
+  const size = selectedSize?.productId === productid
+    ? selectedSize.value
+    : productData?.sizes?.[0] || null
   return productData ? (
 
-    <div className='border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100'>
+    <div className='product-detail-page border-t-2 pt-10 transition-opacity ease-in duration-500 opacity-100'>
       {/* product data */}
       <div className=' flex gap-12 sm:gap-12 flex-col sm:flex-row'>
         {/* product image */}
@@ -44,7 +27,7 @@ useEffect(()=>{
           <div className='flex sm:flex-col overflow-x-auto sm:overflow-y-scroll justify-between sm:justify-normal sm:w-[18.7%] w-full'>
             {
               productData.image.map((item,index)=>(
-                <img onClick={()=>setImage(item)}  key={index} src={item} alt="" className='w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer' />
+                <img onClick={()=>setSelectedImage({ productId: productid, source: item })}  key={index} src={item} alt="" className='w-[24%] sm:w-full sm:mb-3 flex-shrink-0 cursor-pointer' />
                   
     
               ))
@@ -67,13 +50,27 @@ useEffect(()=>{
               <img src={assets.star_dull_icon} alt="" className="w-3 5" />
               <p className='pl-2'>(125)</p>
             </div>
-            <p className='mt-5 text-3xl font-medium'>{currency}{productData.price}</p>
+            <div className='mt-5 flex flex-wrap items-center gap-4'>
+              <p className='text-3xl font-medium'>{currency}{productData.price}</p>
+              <button
+                type='button'
+                onClick={() => toggleWishlist(productData._id)}
+                aria-pressed={isInWishlist(productData._id)}
+                aria-label={isInWishlist(productData._id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                className={`wishlist-detail${isInWishlist(productData._id) ? ' is-saved' : ''}`}
+              >
+                <svg aria-hidden='true' viewBox='0 0 24 24' fill={isInWishlist(productData._id) ? 'currentColor' : 'none'} stroke='currentColor' strokeWidth='1.7' strokeLinecap='round' strokeLinejoin='round'>
+                  <path d='M20.8 8.7c0 5.2-8.8 10.2-8.8 10.2S3.2 13.9 3.2 8.7a4.5 4.5 0 0 1 8.8-1.2 4.5 4.5 0 0 1 8.8 1.2Z' />
+                </svg>
+                <span>{isInWishlist(productData._id) ? 'Saved' : 'Save to wishlist'}</span>
+              </button>
+            </div>
             <p className='mt-5 text-gray-500 md:w-4/5'>{productData.description}</p>
             <div className='flex flex-col gap-4 my-8'>
             <p className='select'>Select Size</p>
             <div className='flex gap-2'>
               {productData.sizes.map((item,index)=>(
-                <button onClick={()=>setSize(item)} className={`border py-2 px-4 bg-gray-100 hover:bg-gray-200  ${size === item ? 'bg-gray-500' : ''}`}  key={index}>{item}</button>
+                <button onClick={()=>setSelectedSize({ productId: productid, value: item })} className={`border py-2 px-4 bg-gray-100 hover:bg-gray-200  ${size === item ? 'bg-gray-500' : ''}`}  key={index}>{item}</button>
               ))}
 
             </div>

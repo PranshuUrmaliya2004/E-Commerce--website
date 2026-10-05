@@ -69,7 +69,7 @@
 
 
 
-import React, { useEffect, useContext, useState } from 'react'
+import React, { useContext } from 'react'
 import { ShopContext } from '../Context/ShopContext'
 import Title from '../Components/Title'
 import { assets } from '../assets/assets'
@@ -79,30 +79,12 @@ import CartTotals from '../Components/CartTotals'
 
 const Cart = () => {
 
-  const { products, currency, cartItems, updateQuantity,navigate } = useContext(ShopContext)
-  const [cartData, setCartData] = useState([])
-
-  useEffect(() => {
-
-    if(products.length>0){
-    const tempData = []
-
-    for (const productId in cartItems) {
-      for (const size in cartItems[productId]) {
-        if (cartItems[productId][size] > 0) {
-          tempData.push({
-            _id: productId,
-            size,
-            quantity: cartItems[productId][size]
-          })
-        }
-      }
-    }
-
-    setCartData(tempData)
-  
-}
-  }, [cartItems,products])
+  const { products, currency, cartItems, updateQuantity, navigate, toggleWishlist, isInWishlist } = useContext(ShopContext)
+  const cartData = Object.entries(cartItems).flatMap(([productId, sizeItems]) => (
+    Object.entries(sizeItems || {})
+      .filter(([, quantity]) => quantity > 0)
+      .map(([size, quantity]) => ({ _id: productId, size, quantity }))
+  ))
 
   return ( 
     <div className='border-t pt-14'>
@@ -140,6 +122,16 @@ const Cart = () => {
                       {item.size}
                     </p>
                   </div>
+                  <button
+                    type='button'
+                    onClick={() => {
+                      if (!isInWishlist(item._id)) toggleWishlist(item._id)
+                      updateQuantity(item._id, item.size, 0)
+                    }}
+                    className='mt-3 text-xs font-medium text-gray-500 underline decoration-gray-300 underline-offset-4 transition hover:text-black'
+                  >
+                    Save for later
+                  </button>
                 </div>
               </div>
 

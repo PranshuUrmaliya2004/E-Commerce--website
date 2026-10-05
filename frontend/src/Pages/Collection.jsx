@@ -67,18 +67,18 @@ const Collection = () => {
 <div className="flex flex-col gap-2 text-sm font-light text-gray-700">
   <p className="flex gap-2">
 
-    <input className="w-3" type="checkbox" value={'Men'} onChange={toggleCategory}/>
+    <input className="w-3" type="checkbox" value={'Men'} checked={category.includes('Men')} onChange={toggleCategory}/>
     Men
   </p>
  <p className="flex gap-2">
 
-    <input className="w-3" type="checkbox" value={'Women'}onChange={toggleCategory}/>
+    <input className="w-3" type="checkbox" value={'Women'} checked={category.includes('Women')} onChange={toggleCategory}/>
    Women
   </p>
 
  <p className="flex gap-2">
 
-    <input className="w-3" type="checkbox" value={'Kids'} onChange={toggleCategory}/>
+    <input className="w-3" type="checkbox" value={'Kids'} checked={category.includes('Kids')} onChange={toggleCategory}/>
     Kids
   </p>
    
