@@ -1,19 +1,124 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
 
-@import "tailwindcss";
+@import 'tailwindcss';
 
+:root {
+  color: #0f172a;
+  background: #f4f7fb;
+  font-family: 'Outfit', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: 'Outfit', sans-serif;
+}
+
+html {
+  background: #f4f7fb;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #f4f7fb;
+  color: #0f172a;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input,
+textarea,
+select {
+  color: #0f172a;
+}
+
+::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
 
 .active {
-    background-color: #ffebf5;
-    border-color: #c586A5;
-}
-*{
-
-    font-family: Outfit;
+  background-color: #fff2f6;
+  border-color: #f1d7de;
 }
 
-select ,input,textarea{
-    background-color:1px solid#c2c2c2 ;
-    outline-color: #c586A5;
-    border-radius: 4px;
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.admin-root[data-theme='dark'] {
+  background-color: #0b1220 !important;
+  color: #dbe4ef;
+  color-scheme: dark;
+}
+
+.admin-root[data-theme='dark'] [class~='bg-[#f4f7fb]'],
+.admin-root[data-theme='dark'] [class~='bg-white/80'],
+.admin-root[data-theme='dark'] [class~='bg-white/90'],
+.admin-root[data-theme='dark'] [class~='bg-white'] {
+  background-color: #131d2a !important;
+}
+
+.admin-root[data-theme='dark'] [class~='bg-slate-50'],
+.admin-root[data-theme='dark'] [class~='bg-slate-100'] {
+  background-color: #1b2838 !important;
+}
+
+.admin-root[data-theme='dark'] [class~='border-slate-200'],
+.admin-root[data-theme='dark'] [class~='border-slate-100'] {
+  border-color: #2c3b4e !important;
+}
+
+.admin-root[data-theme='dark'] [class~='divide-slate-200'] > :not([hidden]) ~ :not([hidden]),
+.admin-root[data-theme='dark'] [class~='divide-slate-100'] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #2c3b4e !important;
+}
+
+.admin-root[data-theme='dark'] [class~='text-slate-900'],
+.admin-root[data-theme='dark'] [class~='text-slate-800'],
+.admin-root[data-theme='dark'] [class~='text-slate-700'] {
+  color: #e5edf7 !important;
+}
+
+.admin-root[data-theme='dark'] [class~='text-slate-600'],
+.admin-root[data-theme='dark'] [class~='text-slate-500'] {
+  color: #b0bdcd !important;
+}
+
+.admin-root[data-theme='dark'] [class~='text-slate-400'] {
+  color: #8a9aaf !important;
+}
+
+.admin-root[data-theme='dark'] input,
+.admin-root[data-theme='dark'] select,
+.admin-root[data-theme='dark'] textarea {
+  background-color: #131d2a;
+  border-color: #35465b;
+  color: #e5edf7;
+}
+
+.admin-root[data-theme='dark'] input::placeholder {
+  color: #8393a8;
+}
+
+.admin-root[data-theme='dark'] .active,
+.admin-root[data-theme='dark'] [class~='bg-[#fff2f6]'] {
+  background-color: #3a2631 !important;
+  border-color: #644252 !important;
+  color: #f5cad8 !important;
 }

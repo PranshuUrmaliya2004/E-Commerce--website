@@ -37,6 +37,34 @@ select {
   font: inherit;
 }
 
+input,
+textarea,
+select {
+  color: var(--ink);
+  background: #fff;
+}
+
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: #8b7d7a;
+  opacity: 1;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  box-shadow: 0 0 0 1000px #fff inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 button,
 a {
   -webkit-tap-highlight-color: transparent;
@@ -67,12 +95,13 @@ a.active hr {
 .season-hero__image {
   position: absolute;
   z-index: -1;
-  inset: 0;
-  width: 100%;
+  inset: 0 0 0 auto;
+  width: min(72rem, 72%);
   height: 100%;
   object-fit: cover;
-  object-position: 59% 43%;
+  object-position: 58% 42%;
   animation: season-image-arrive 1.3s cubic-bezier(.2,.7,.2,1) both;
+  filter: saturate(1.02) contrast(1.03);
 }
 
 .season-hero__copy {
@@ -193,7 +222,15 @@ a.active hr {
 }
 
 .editorial-product {
-  animation: product-arrive .55s both;
+  position: relative;
+  display: block;
+  animation: product-card-arrive .6s cubic-bezier(.2,.7,.2,1) both;
+  transition: transform .35s ease, box-shadow .35s ease;
+}
+
+.editorial-product:hover,
+.editorial-product:focus-visible {
+  transform: translateY(-6px);
 }
 
 .editorial-product__image {
@@ -201,18 +238,26 @@ a.active hr {
   aspect-ratio: 4 / 5;
   overflow: hidden;
   background: var(--surface);
+  box-shadow: 0 8px 22px rgb(28 23 20 / 7%);
+  transition: transform .45s ease, box-shadow .45s ease;
+}
+
+.editorial-product:hover .editorial-product__image,
+.editorial-product:focus-visible .editorial-product__image {
+  box-shadow: 0 12px 28px rgb(28 23 20 / 12%);
 }
 
 .editorial-product__image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform .65s cubic-bezier(.2,.7,.2,1);
+  transition: transform .65s cubic-bezier(.2,.7,.2,1), filter .4s ease;
 }
 
 .editorial-product:hover .editorial-product__image img,
 .editorial-product:focus-visible .editorial-product__image img {
   transform: scale(1.045);
+  filter: saturate(1.08);
 }
 
 .editorial-product__hint {
@@ -279,9 +324,15 @@ a.active hr {
   to { opacity: 1; translate: 0 0; }
 }
 
-@keyframes product-arrive {
-  from { opacity: 0; translate: 0 .7rem; }
-  to { opacity: 1; translate: 0 0; }
+@keyframes product-card-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(.9rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 640px) {
