@@ -1,20 +1,59 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { toast } from 'react-toastify'
 import { assets } from '../assets/assets'
-import { Link, NavLink } from 'react-router-dom'
 import { ShopContext } from '../Context/ShopContext'
 
+const navItems = [
+  { label: 'Men', query: '?category=Men' },
+  { label: 'Women', query: '?category=Women' },
+  { label: 'Kids', query: '?category=Kids' },
+  { label: 'Beauty', query: '?category=Beauty' },
+  { label: 'New Arrivals', query: '?sort=newest' }
+]
+
+const Icon = ({ children, size = 20, ...props }) => (
+  <svg aria-hidden='true' width={size} height={size} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.7' strokeLinecap='round' strokeLinejoin='round' {...props}>
+    {children}
+  </svg>
+)
+
+const SearchIcon = (props) => <Icon {...props}><circle cx='10.8' cy='10.8' r='6.8' /><path d='m16 16 4.5 4.5' /></Icon>
+const UserIcon = (props) => <Icon {...props}><circle cx='12' cy='8' r='3.4' /><path d='M5.5 20a6.5 6.5 0 0 1 13 0' /></Icon>
+const HeartIcon = (props) => <Icon {...props}><path d='M20.8 8.7c0 5.2-8.8 10.2-8.8 10.2S3.2 13.9 3.2 8.7a4.5 4.5 0 0 1 8.8-1.2 4.5 4.5 0 0 1 8.8 1.2Z' /></Icon>
+const BagIcon = (props) => <Icon {...props}><path d='M5 8h14l1 12H4L5 8Z' /><path d='M9 9V6a3 3 0 0 1 6 0v3' /></Icon>
+const MenuIcon = (props) => <Icon {...props}><path d='M4 7h16M4 12h16M4 17h16' /></Icon>
+const CloseIcon = (props) => <Icon {...props}><path d='m6 6 12 12M18 6 6 18' /></Icon>
+
 const Navbar = () => {
-  const [visible, setVisible] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-  const { setShowSearch, getCartCount, navigate, token, setToken, setCartItems } = useContext(ShopContext)
+  const { search, setSearch, setShowSearch, getCartCount, navigate, token, setToken, setCartItems } = useContext(ShopContext)
+  const location = useLocation()
+  const activeCategory = new URLSearchParams(location.search).get('category')
+  const activeSort = new URLSearchParams(location.search).get('sort')
 
   const closeMenus = () => {
-    setVisible(false)
+    setMobileOpen(false)
     setProfileOpen(false)
   }
 
-  const openSearch = () => {
-    setShowSearch(true)
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setMobileOpen(false)
+        setProfileOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  const submitSearch = (event) => {
+    event.preventDefault()
+    setShowSearch(false)
+    setSearch(search.trim())
+    closeMenus()
     navigate('/collection')
   }
 
@@ -26,53 +65,125 @@ const Navbar = () => {
     navigate('/login')
   }
 
-  const goTo = (path) => {
-    closeMenus()
-    navigate(path)
+  const renderNavLinks = (mobile = false) => navItems.map(({ label, query }) => {
+    const isActive = location.pathname === '/collection' && (
+      (label === 'New Arrivals' && activeSort === 'newest') ||
+      (label !== 'New Arrivals' && activeCategory === label)
+    )
+
+    return (
+      <Link
+        key={label}
+        to={`/collection${query}`}
+        onClick={() => {
+          setSearch('')
+          setShowSearch(false)
+          closeMenus()
+        }}
+        className={`shop-nav__link${isActive ? ' is-active' : ''}${mobile ? ' shop-nav__link--mobile' : ''}`}
+      >
+        {label}
+      </Link>
+    )
+  })
+
+  const renderAccountMenu = () => token && profileOpen && (
+    <div className='shop-nav__account-menu'>
+      <Link to='/profile' onClick={closeMenus}>My Profile</Link>
+      <Link to='/orders' onClick={closeMenus}>My Orders</Link>
+      <button type='button' onClick={logout}>Logout</button>
+    </div>
+  )
+
+  const accountAction = () => {
+    if (!token) {
+      closeMenus()
+      navigate('/login')
+      return
+    }
+    setProfileOpen((open) => !open)
   }
 
   return (
-    <header className='relative z-30 flex h-16 items-center justify-between font-medium'>
-      <Link to='/' aria-label='Home'><img src={assets.logo} className='w-36' alt='Shop home' /></Link>
-      <nav aria-label='Main navigation'>
-        <ul className='hidden gap-5 text-sm text-gray-700 sm:flex'>
-          <NavLink to='/' className='flex flex-col items-center gap-1'><p>HOME</p><hr className='hidden h-0.5 w-2/4 border-none bg-gray-700' /></NavLink>
-          <NavLink to='/collection' className='flex flex-col items-center gap-1'><p>COLLECTION</p><hr className='hidden h-0.5 w-2/4 border-none bg-gray-700' /></NavLink>
-          <NavLink to='/about' className='flex flex-col items-center gap-1'><p>ABOUT</p><hr className='hidden h-0.5 w-2/4 border-none bg-gray-700' /></NavLink>
-          <NavLink to='/contact' className='flex flex-col items-center gap-1'><p>CONTACT</p><hr className='hidden h-0.5 w-2/4 border-none bg-gray-700' /></NavLink>
-        </ul>
-      </nav>
-      <div className='flex items-center gap-4 sm:gap-6'>
-        <button type='button' onClick={openSearch} aria-label='Search products' className='flex min-h-11 min-w-8 items-center justify-center'><img src={assets.search_icon} className='w-5' alt='' /></button>
-        <div className='relative'>
-          <button type='button' onClick={() => token ? setProfileOpen(!profileOpen) : navigate('/login')} aria-label={token ? 'Open account menu' : 'Sign in'} aria-expanded={profileOpen} className='flex min-h-11 min-w-8 items-center justify-center'><img src={assets.profile_icon} className='w-5' alt='' /></button>
-          {token && profileOpen && <div className='absolute right-0 top-full z-50 w-40 pt-2'><div className='flex flex-col gap-1 border border-gray-200 bg-white p-2 text-sm text-gray-600 shadow-md'>
-            <button type='button' onClick={() => goTo('/profile')} className='px-3 py-2 text-left hover:text-black'>My Profile</button>
-            <button type='button' onClick={() => goTo('/orders')} className='px-3 py-2 text-left hover:text-black'>My Orders</button>
-            <button type='button' onClick={logout} className='px-3 py-2 text-left hover:text-black'>Logout</button>
-          </div></div>}
+    <header className='shop-nav'>
+      <div className='shop-nav__inner'>
+        <div className='shop-nav__top-row'>
+          <Link to='/' onClick={closeMenus} aria-label='ShopNex home' className='shop-nav__brand'>
+            <img src={assets.logo} alt='ShopNex' />
+          </Link>
+
+          <nav className='shop-nav__categories' aria-label='Shop categories'>
+            {renderNavLinks()}
+          </nav>
+
+          <form className='shop-nav__search' role='search' onSubmit={submitSearch}>
+            <SearchIcon size={18} />
+            <input
+              type='search'
+              aria-label='Search fashion and products'
+              placeholder='Search for products, brands and more'
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+            <button type='submit' aria-label='Submit search'><SearchIcon size={18} /></button>
+          </form>
+
+          <div className='shop-nav__actions'>
+            <div className='shop-nav__account'>
+              <button type='button' onClick={accountAction} aria-label={token ? 'Open account menu' : 'Login or profile'} aria-expanded={profileOpen} className='shop-nav__action'>
+                <UserIcon size={21} />
+                <span>{token ? 'Profile' : 'Login'}</span>
+              </button>
+              {renderAccountMenu()}
+            </div>
+
+            <button type='button' aria-label='Wishlist' title='Wishlist' onClick={() => toast.info('Wishlist is coming soon.')} className='shop-nav__action shop-nav__wishlist'>
+              <HeartIcon size={21} />
+              <span>Wishlist</span>
+            </button>
+
+            <Link to='/cart' onClick={closeMenus} aria-label={`Shopping bag, ${getCartCount()} items`} className='shop-nav__action shop-nav__bag'>
+              <span className='shop-nav__bag-icon'><BagIcon size={21} /><span className='shop-nav__count'>{getCartCount()}</span></span>
+              <span>Bag</span>
+            </Link>
+
+            <button
+              type='button'
+              onClick={() => { setMobileOpen((open) => !open); setProfileOpen(false) }}
+              aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={mobileOpen}
+              className='shop-nav__menu-button'
+            >
+              {mobileOpen ? <CloseIcon size={23} /> : <MenuIcon size={23} />}
+            </button>
+          </div>
         </div>
-        <Link to='/cart' aria-label={`Cart, ${getCartCount()} items`} className='relative flex min-h-11 min-w-8 items-center justify-center'>
-          <img src={assets.cart_icon} className='w-5' alt='' />
-          <span className='absolute bottom-1 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-black px-1 text-[10px] leading-none text-white'>{getCartCount()}</span>
-        </Link>
-        <button type='button' onClick={() => setVisible(true)} aria-label='Open mobile navigation' aria-expanded={visible} className='flex min-h-11 min-w-8 items-center justify-center sm:hidden'><img src={assets.menu_icon} className='w-5' alt='' /></button>
+
+        <form className='shop-nav__search shop-nav__search--mobile' role='search' onSubmit={submitSearch}>
+          <SearchIcon size={18} />
+          <input
+            type='search'
+            aria-label='Search fashion and products'
+            placeholder='Search for products, brands and more'
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <button type='submit' aria-label='Submit search'><SearchIcon size={18} /></button>
+        </form>
       </div>
-      {visible && <button type='button' aria-label='Close mobile navigation' onClick={closeMenus} className='fixed inset-0 z-40 bg-black/20 sm:hidden' />}
-      <aside className={`fixed right-0 top-0 z-50 h-dvh w-[min(20rem,100vw)] overflow-y-auto bg-white transition-transform duration-300 sm:hidden ${visible ? 'translate-x-0' : 'translate-x-full'}`} aria-label='Mobile navigation' aria-hidden={!visible} inert={!visible}>
-        <div className='flex min-h-full flex-col text-gray-700'>
-          <button type='button' onClick={closeMenus} className='flex min-h-14 items-center gap-3 border-b px-5 text-left'><img src={assets.dropdown_icon} className='h-4 rotate-180' alt='' /><span>Close menu</span></button>
-          <NavLink onClick={closeMenus} className='border-b px-6 py-4' to='/'>Home</NavLink>
-          <NavLink onClick={closeMenus} className='border-b px-6 py-4' to='/collection'>Collection</NavLink>
-          <NavLink onClick={closeMenus} className='border-b px-6 py-4' to='/about'>About</NavLink>
-          <NavLink onClick={closeMenus} className='border-b px-6 py-4' to='/contact'>Contact</NavLink>
-          {token ? <>
-            <NavLink onClick={closeMenus} className='border-b px-6 py-4' to='/profile'>My Profile</NavLink>
-            <NavLink onClick={closeMenus} className='border-b px-6 py-4' to='/orders'>My Orders</NavLink>
-            <button type='button' onClick={logout} className='px-6 py-4 text-left'>Logout</button>
-          </> : <NavLink onClick={closeMenus} className='px-6 py-4' to='/login'>Sign in</NavLink>}
+
+      <div className={`shop-nav__mobile-panel${mobileOpen ? ' is-open' : ''}`} aria-hidden={!mobileOpen} inert={!mobileOpen}>
+        <nav aria-label='Mobile shop categories'>
+          {renderNavLinks(true)}
+        </nav>
+        <div className='shop-nav__mobile-secondary'>
+          <Link to={token ? '/profile' : '/login'} onClick={closeMenus}>{token ? 'My Profile' : 'Login / Sign up'}</Link>
+          {token && <Link to='/orders' onClick={closeMenus}>My Orders</Link>}
+          <Link to='/about' onClick={closeMenus}>About ShopNex</Link>
+          <Link to='/contact' onClick={closeMenus}>Contact</Link>
+          {token && <button type='button' onClick={logout}>Log out</button>}
         </div>
-      </aside>
+      </div>
     </header>
   )
 }
