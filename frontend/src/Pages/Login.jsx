@@ -1,143 +1,136 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { ShopContext } from '../Context/ShopContext'
 import axios from 'axios'
+import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import { assets } from '../assets/assets'
+import { ShopContext } from '../Context/ShopContext'
+
 const Login = () => {
+  const { token, setToken, navigate, backendUrl } = useContext(ShopContext)
+  const [view, setView] = useState('login')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  const [currentState,setCurrentState]=useState('Login')
-  const{token,setToken,navigate,backendUrl}=useContext(ShopContext);
-  const[name,setName]=useState('')
-  const[password,setPassword]=useState('')
-  const[email,setEmail]=useState('')
-    const onSubmithandler= async(event)=>{
-      event.preventDefault();
-      try{ 
-      if(currentState === 'Sign Up'){ //signup
-    const  response = await axios.post(backendUrl + "/api/user/register",{name,email,password}) //for Sign Up 
-       
-    if(response.data.success){
+  useEffect(() => {
+    if (token) navigate('/', { replace: true })
+  }, [navigate, token])
+
+  const submitForm = async (event) => {
+    event.preventDefault()
+    setSubmitting(true)
+
+    try {
+      if (view === 'forgot') {
+        const response = await axios.post(`${backendUrl}/api/user/forgot-password`, { email })
+        if (response.data.success) {
+          toast.success(response.data.message || 'Check your email for a reset link')
+          setView('login')
+        } else {
+          toast.error(response.data.message || 'Could not request a reset link')
+        }
+        return
+      }
+
+      if (view === 'signup' && password !== confirmPassword) {
+        toast.error('Passwords do not match')
+        return
+      }
+
+      const endpoint = view === 'signup' ? 'register' : 'login'
+      const payload = view === 'signup' ? { name: name.trim(), email: email.trim(), password } : { email: email.trim(), password }
+      const response = await axios.post(`${backendUrl}/api/user/${endpoint}`, payload)
+
+      if (!response.data.success) {
+        toast.error(response.data.message || 'Could not sign in')
+        return
+      }
+
       setToken(response.data.token)
-      localStorage.setItem('token',response.data.token)
-    }else{
-      toast.error(response.data.message)
+      localStorage.setItem('token', response.data.token)
+      toast.success(view === 'signup' ? 'Your ShopNex account is ready' : 'Welcome back')
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Something went wrong. Please try again.')
+    } finally {
+      setSubmitting(false)
     }
+  }
 
-      }else{//login
-         
-        const response= await axios.post(backendUrl + "/api/user/login",{email,password})
-  if(response.data.success){
-      setToken(response.data.token)
-      localStorage.setItem('token',response.data.token)
-    }else{
-      toast.error(response.data.message)
-    }
-         
-      }
-      
-      }
-      catch(error){
-console.log(error)
-toast.error(error.message)
-      }
-    }
+  const title = view === 'signup' ? 'Create your account' : view === 'forgot' ? 'Reset your password' : 'Welcome back'
+  const description = view === 'signup'
+    ? 'Join ShopNex to keep your finds and orders together.'
+    : view === 'forgot'
+      ? 'Enter your account email and we will send a secure reset link.'
+      : 'Sign in to continue where your style left off.'
 
-    useEffect(()=>{
-      if(token){
-           navigate('/')
- } },[token])
-  
   return (
-    <form  onSubmit={onSubmithandler}  className='flex flex-col items-center w-[90%] sm:max-w-96 m-auto mt-14 gap-4 text-gray-800'>
+    <main className='auth-page'>
+      <section className='auth-panel'>
+        <div className='auth-brand-panel'>
+          <img className='auth-brand-image' src={assets.hero_img} alt='' aria-hidden='true' />
+          <Link to='/' aria-label='ShopNex home' className='auth-brand-logo'><img src={assets.logo} alt='ShopNex' /></Link>
+          <div className='auth-brand-copy'>
+            <p className='editorial-kicker'>A MORE PERSONAL EDIT</p>
+            <h1>Good finds.<br />Better fits.</h1>
+            <p>Keep your wishlist, orders, and account details in one place.</p>
+          </div>
+          <span className='auth-brand-index'>SHOPNEX / MEMBER ACCESS</span>
+        </div>
 
-<div className='inline-flex  items-center gap-2 mb-2 mt-10'>
-  <p className='prata-regular text-3xl'>{currentState}</p>
-  <hr className='border-none h-[1.5px] w-8 bg-gray-800'/>
+        <div className='auth-form-panel'>
+          <div className='auth-form-heading'>
+            <p className='editorial-kicker'>{view === 'signup' ? 'JOIN SHOPNEX' : view === 'forgot' ? 'ACCOUNT RECOVERY' : 'MEMBER SIGN IN'}</p>
+            <h2>{title}</h2>
+            <p>{description}</p>
+          </div>
 
-</div>
- {currentState === 'Login' ? '': <input onChange={(e)=>setName(e.target.value)} value={name} type="text" className='w-full  px-3 py-2  border border-gray-800' placeholder='Name'required  />}
-  <input  onChange={(e)=>setEmail(e.target.value)} value={email}  type="email" className='w-full  px-3 py-2  border border-gray-800' placeholder='Email' required/>
-  <input onChange={(e)=>setPassword(e.target.value)} value={password} type="password" className='w-full  px-3 py-2  border border-gray-800' placeholder='Password' required/>
-   <div className='w-full flex justify-between text-sm mt-2'>
-    <p className='cursor-pointer   text-gray-600 hover:text-black'>Forgot your Password</p>
-    {
-      currentState === 'Login'
-      ? <p onClick={() =>{ setCurrentState('Sign Up')}} className="cursor-pointer">Create New Account</p>
-       : <p onClick={() =>{ setCurrentState('Login')}} className="cursor-pointer">Login Here</p>
-       
-    }
- 
-   </div>
-   <button className='bg-black text-white font-light px-8 py-2 mt-4'>{currentState === 'Login'? "Sign In":"Sign Up"  }
-   </button>
-    </form>
+          <form onSubmit={submitForm} className='auth-form'>
+            {view === 'signup' && (
+              <label>
+                Full name
+                <input autoComplete='name' required minLength={2} maxLength={80} value={name} onChange={(event) => setName(event.target.value)} placeholder='Your name' />
+              </label>
+            )}
 
+            <label>
+              Email address
+              <input autoComplete='email' type='email' required value={email} onChange={(event) => setEmail(event.target.value)} placeholder='you@example.com' />
+            </label>
 
-// <form className="flex flex-col items-center w-[90%] sm:max-w-96 m-auto mt-14 gap-4 text-gray-800 bg-white p-6 rounded shadow">
+            {view !== 'forgot' && (
+              <label>
+                Password
+                <input autoComplete={view === 'signup' ? 'new-password' : 'current-password'} type='password' required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} placeholder='At least 8 characters' />
+              </label>
+            )}
 
-//   {/* Title */}
-//   <div className="inline-flex items-center gap-2 mb-2">
-//     <p className="prata-regular text-3xl">{currentState}</p>
-//     <hr className="border-none h-[1.5px] w-8 bg-gray-800" />
-//   </div>
+            {view === 'signup' && (
+              <label>
+                Confirm password
+                <input autoComplete='new-password' type='password' required minLength={8} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder='Enter your password again' />
+              </label>
+            )}
 
-//   {/* Name (only for Sign Up) */}
-//   {currentState !== 'Login' && (
-//     <input
-//       type="text"
-//       placeholder="Name"
-//       className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-black"
-//       required
-//     />
-//   )}
+            {view === 'login' && (
+              <button type='button' onClick={() => setView('forgot')} className='auth-inline-link'>Forgot password?</button>
+            )}
 
-//   {/* Email */}
-//   <input
-//     type="email"
-//     placeholder="Email"
-//     className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-black"
-//     required
-//   />
+            <button type='submit' disabled={submitting} className='auth-submit'>
+              {submitting ? 'Please wait...' : view === 'signup' ? 'Create account' : view === 'forgot' ? 'Send reset link' : 'Sign in'}
+            </button>
+          </form>
 
-//   {/* Password */}
-//   <input
-//     type="password"
-//     placeholder="Password"
-//     className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-black"
-//     required
-//   />
-
-//   {/* Forgot password (RIGHT aligned like Flipkart) */}
-//   <div className="w-full flex justify-end text-sm">
-//     <button
-//       type="button"
-//       className="text-blue-600 hover:underline"
-//     >
-//       Forgot password?
-//     </button>
-//   </div>
-
-//   {/* Submit Button */}
-//   <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">
-//     {currentState === 'Login' ? 'Login' : 'Create Account'}
-//   </button>
-
-//   {/* Toggle Login / Signup */}
-//   <p
-//     className="text-sm text-gray-600 cursor-pointer hover:underline"
-//     onClick={() =>
-//       setCurrentState(currentState === 'Login' ? 'Sign Up' : 'Login')
-//     }
-//   >
-//     {currentState === 'Login'
-//       ? "New to Shop? Create an account"
-//       : "Already have an account? Login"}
-//   </p>
-
-// </form>
-
-
+          <div className='auth-form-footer'>
+            {view === 'login' && <p>New to ShopNex? <button type='button' onClick={() => setView('signup')}>Create account</button></p>}
+            {view === 'signup' && <p>Already have an account? <button type='button' onClick={() => setView('login')}>Sign in</button></p>}
+            {view === 'forgot' && <p>Remembered your password? <button type='button' onClick={() => setView('login')}>Back to sign in</button></p>}
+          </div>
+        </div>
+      </section>
+    </main>
   )
 }
 
 export default Login
-

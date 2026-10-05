@@ -81,6 +81,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import Verify from '../Pages/Verify'
 import Profile from '../Pages/Profile'
 import Wishlist from '../Pages/Wishlist'
+import ResetPassword from '../Pages/ResetPassword'
 
 // import Addproduct from '../Pages/admin/Addproducts'
 
@@ -98,6 +99,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home/>} />
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/orders" element={<Order />} />
