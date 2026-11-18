@@ -588,17 +588,20 @@ const requestPasswordReset = async (req, res) => {
     const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
     if (!validator.isEmail(email)) return res.json(genericResponse);
 
-    const user = await UserModel.findOne({ email });
-    if (!user) return res.json(genericResponse);
-
     const smtpHost = process.env.SMTP_HOST;
     const smtpUser = process.env.SMTP_USER;
     const smtpPassword = process.env.SMTP_PASSWORD;
     const smtpFrom = process.env.SMTP_FROM || smtpUser;
     if (!smtpHost || !smtpUser || !smtpPassword || !smtpFrom) {
       console.error("Password reset email is unavailable: SMTP environment is not configured");
-      return res.json(genericResponse);
+      return res.status(503).json({
+        success: false,
+        message: "Password reset email is temporarily unavailable. Please try again later."
+      });
     }
+
+    const user = await UserModel.findOne({ email });
+    if (!user) return res.json(genericResponse);
 
     const resetToken = randomBytes(32).toString("hex");
     user.passwordResetTokenHash = createHash("sha256").update(resetToken).digest("hex");
@@ -612,7 +615,7 @@ const requestPasswordReset = async (req, res) => {
       secure: port === 465,
       auth: { user: smtpUser, pass: smtpPassword }
     });
-    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
+    const frontendUrl = (process.env.FRONTEND_URL || "https://shopnex-frontend.vercel.app").replace(/\/$/, "");
     const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
     try {
@@ -628,12 +631,19 @@ const requestPasswordReset = async (req, res) => {
       user.passwordResetExpires = undefined;
       await user.save();
       console.error("Could not send password reset email:", mailError.message);
+      return res.status(503).json({
+        success: false,
+        message: "Could not send the reset email right now. Please try again later."
+      });
     }
 
     return res.json(genericResponse);
   } catch (error) {
     console.error("Password reset request failed:", error.message);
-    return res.json(genericResponse);
+    return res.status(500).json({
+      success: false,
+      message: "Could not send a password reset email. Please try again later."
+    });
   }
 };
 
@@ -685,7 +695,6 @@ export {
   requestPasswordReset,
   resetUserPassword,
 };
-
 
 
 
