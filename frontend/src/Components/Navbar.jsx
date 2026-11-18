@@ -7,7 +7,6 @@ const navItems = [
   { label: 'Men', query: '?category=Men' },
   { label: 'Women', query: '?category=Women' },
   { label: 'Kids', query: '?category=Kids' },
-  { label: 'Beauty', query: '?category=Beauty' },
   { label: 'New Arrivals', query: '?sort=newest' }
 ]
 
